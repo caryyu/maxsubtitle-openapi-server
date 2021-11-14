@@ -36,8 +36,9 @@ func SearchHandler(app *common.App) http.HandlerFunc {
 		var err error
 
 		if keyword := vars["k"]; len(keyword) != 0 {
-			c := resource.A4kDotNet{}
+			c := app.Fetcher
 			if items, err = c.Search(keyword); err != nil {
+				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte("Oops, Something went wrong"))
 				return
@@ -63,25 +64,27 @@ func SearchHandler(app *common.App) http.HandlerFunc {
 func DownloadHandler(app *common.App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		var bytes []byte
+		var file *resource.File
 		var err error
 		if id := vars["id"]; len(id) != 0 {
-			c := resource.A4kDotNet{}
-			if bytes, err = c.GetFromCache(id); err != nil {
+			c := app.Fetcher
+			if file, err = c.GetFromCache(id); err != nil {
+				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte("Oops, Something went wrong"))
 				return
 			}
 		}
 
-		if bytes == nil {
+		if file == nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("Not Found"))
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+		w.Header().Set("Content-Disposition", "attachment; filename="+file.Name)
 		w.WriteHeader(http.StatusOK)
-		w.Write(bytes)
+		w.Write(file.Bytes)
 	}
 }

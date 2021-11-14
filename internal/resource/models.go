@@ -6,4 +6,5 @@ type Subtitle struct {
 	Desc       string `json:"desc"`
 	Name       string `json:"name"`
 	Url        string `json:"url"`
+	Format     string `json:"format"`
 }
