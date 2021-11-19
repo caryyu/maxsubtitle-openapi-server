@@ -172,8 +172,12 @@ func (r *A4kDotNet) download(id string, name string, url string) (subtitles []Su
 	return subtitles, nil
 }
 
+// Convert .ass to .srt
 func (r *A4kDotNet) fromASSToSRT(reader io.Reader) ([]byte, error) {
-	s, err := astisub.ReadFromSSA(reader)
+	s, err := astisub.ReadFromSSAWithOptions(reader, astisub.SSAOptions{
+		OnUnknownSectionName: func(name string) {},
+		OnInvalidLine:        func(line string) {},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +277,7 @@ func (r *A4kDotNet) flattenToMemory(dest string, files *[]File) {
 		case ".ssa", ".ass":
 			in := bytes.NewReader(out)
 			if out, err = r.fromASSToSRT(in); err != nil {
-				log.Println("Skipped as it cannot be converted")
+				log.Printf("Skipped as the file cannot be converted properly: %s", name)
 				continue
 			}
 			name = name[0:len(name)-len(ext)] + ".srt"
