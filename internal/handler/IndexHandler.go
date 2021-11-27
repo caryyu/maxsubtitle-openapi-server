@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
 
 	"github.com/caryyu/subtitle-open-server/internal/common"
 	"github.com/caryyu/subtitle-open-server/internal/resource"
@@ -82,8 +83,9 @@ func DownloadHandler(app *common.App) http.HandlerFunc {
 			return
 		}
 
+		filename := url.QueryEscape(file.Name)
 		w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
-		w.Header().Set("Content-Disposition", "attachment; filename="+file.Name)
+		w.Header().Set("Content-Disposition", "attachment; filename="+filename)
 		w.WriteHeader(http.StatusOK)
 		w.Write(file.Bytes)
 	}
