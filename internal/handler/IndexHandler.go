@@ -44,6 +44,10 @@ func SearchHandler(app *common.App) http.HandlerFunc {
 				w.Write([]byte("Oops, Something went wrong"))
 				return
 			}
+
+			if items == nil {
+				items = []resource.Subtitle{}
+			}
 		}
 
 		var bytes []byte

@@ -22,7 +22,11 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 )
 
-require github.com/spf13/cobra v1.2.1
+require (
+	github.com/qiniu/iconv v1.2.0
+	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca
+	github.com/spf13/cobra v1.2.1
+)
 
 require (
 	github.com/asticode/go-astikit v0.22.0 // indirect
