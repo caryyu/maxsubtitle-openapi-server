@@ -1,3 +1,5 @@
+![](https://travis-ci.org/caryyu/maxsubtitle-openapi-server.svg?branch=main) ![](https://img.shields.io/docker/pulls/caryyu/maxsubtitle-openapi-server.svg) 
+
 # maxsubtitle-openapi-server
 
 一个简易的字幕接口服务端，主要利用爬虫进行结构化数据处理并暴露接口出来给各方平台接入使用。
