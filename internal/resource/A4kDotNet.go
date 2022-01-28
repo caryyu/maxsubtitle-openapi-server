@@ -243,6 +243,10 @@ func (r *A4kDotNet) extract(reader io.Reader, ext string) []File {
 
 	var err error
 
+	if _, err := os.Stat(r.CacheDir); os.IsNotExist(err) {
+		os.MkdirAll(r.CacheDir, os.ModePerm)
+	}
+
 	var in *os.File
 	var source string = r.CacheDir + "/data.bin"
 	var dest string = r.CacheDir + "/data"
