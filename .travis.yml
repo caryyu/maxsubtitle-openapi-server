@@ -5,10 +5,11 @@ services:
 
 before_install:
   - docker build -t caryyu/maxsubtitle-openapi-server:${TRAVIS_COMMIT:0:7} .
+  - docker build -t caryyu/maxsubtitle-openapi-server:latest .
 
 deploy:
   provider: script
   script: bash scripts/docker_push
   on:
-    branch: fix-some-issues
+    branch: main
 
