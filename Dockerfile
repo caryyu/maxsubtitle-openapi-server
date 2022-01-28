@@ -4,7 +4,6 @@ WORKDIR /app
 
 ADD . ./
 RUN apk add --no-cache git make build-base
-RUN go env -w GOPROXY=https://goproxy.cn,direct
 RUN go mod download
 RUN go build -o /mast-server ./cmd/server
 
