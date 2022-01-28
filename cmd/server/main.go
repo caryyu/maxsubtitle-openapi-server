@@ -46,6 +46,6 @@ func initSetup(app *common.App) {
 		os.Setenv(HTTP_PORT, "3000")
 	}
 	if path := os.Getenv(CACHE_PATH); len(path) != 0 {
-		app.Fetcher.CachePath = path
+		app.Fetcher.CacheDir = path
 	}
 }

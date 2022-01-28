@@ -19,9 +19,14 @@ import (
 	"github.com/anaskhan96/soup"
 	astisub "github.com/asticode/go-astisub"
 	"github.com/mholt/archiver/v3"
+	"github.com/qiniu/iconv"
+	"github.com/saintfish/chardet"
 )
 
-const site string = "https://www.a4k.net"
+const (
+	site      string = "https://www.a4k.net"
+	userAgent string = "curl/7.64.1"
+)
 
 type File struct {
 	Name  string `json:"name"`
@@ -29,19 +34,19 @@ type File struct {
 }
 
 type A4kDotNet struct {
-	lock      *sync.Mutex
-	CachePath string
+	lock     *sync.Mutex
+	CacheDir string
 }
 
 func NewA4kDotNet() *A4kDotNet {
 	return &A4kDotNet{
-		lock:      &sync.Mutex{},
-		CachePath: "/tmp/data-cache",
+		lock:     &sync.Mutex{},
+		CacheDir: "/tmp/a4kdotnet",
 	}
 }
 
 func (r *A4kDotNet) Search(keyword string) (subtitles []Subtitle, err error) {
-	soup.Header("User-Agent", "curl/7.64.1")
+	soup.Header("User-Agent", userAgent)
 	resp, err := soup.Get(fmt.Sprintf("%s/search?term=%s", site, keyword))
 	if err != nil {
 		return nil, err
@@ -127,7 +132,7 @@ func (r *A4kDotNet) download(id string, name string, url string) (subtitles []Su
 	}
 
 	client := &http.Client{}
-	req.Header.Set("User-Agent", "curl/7.64.1")
+	req.Header.Set("User-Agent", userAgent)
 	if resp, err = client.Do(req); err != nil {
 		return nil, err
 	}
@@ -174,7 +179,15 @@ func (r *A4kDotNet) download(id string, name string, url string) (subtitles []Su
 
 // Convert .ass to .srt
 func (r *A4kDotNet) fromASSToSRT(reader io.Reader) ([]byte, error) {
-	s, err := astisub.ReadFromSSAWithOptions(reader, astisub.SSAOptions{
+	var err error
+	var s *astisub.Subtitles
+
+	if reader, err = r.determineContentEncoding(reader); err != nil {
+		// Can't convert the encodings
+		return nil, err
+	}
+
+	s, err = astisub.ReadFromSSAWithOptions(reader, astisub.SSAOptions{
 		OnUnknownSectionName: func(name string) {},
 		OnInvalidLine:        func(line string) {},
 	})
@@ -193,6 +206,34 @@ func (r *A4kDotNet) fromASSToSRT(reader io.Reader) ([]byte, error) {
 	return bytes, nil
 }
 
+// UTF16LE/UTF16BE/GBK all to utf-8
+func (r *A4kDotNet) determineContentEncoding(reader io.Reader) (io.Reader, error) {
+	var encoding string = "utf-8"
+	var content []byte
+	var err error
+	var result *chardet.Result
+	var cd iconv.Iconv
+
+	if content, err = ioutil.ReadAll(reader); err != nil {
+		return nil, err
+	}
+
+	detector := chardet.NewTextDetector()
+	if result, err = detector.DetectBest(content); err != nil {
+		return nil, err
+	}
+
+	last := make([]byte, len(content))
+	if cd, err = iconv.Open(encoding, result.Charset); err != nil {
+		return nil, err
+	}
+	defer cd.Close()
+
+	cd.Conv(content, last)
+
+	return bytes.NewReader(last), nil
+}
+
 /**
 * Extracting Zip/Rar archives from Http downloaded payload
  */
@@ -203,8 +244,8 @@ func (r *A4kDotNet) extract(reader io.Reader, ext string) []File {
 	var err error
 
 	var in *os.File
-	var source string = "/tmp/data.bin"
-	var dest string = "/tmp/data"
+	var source string = r.CacheDir + "/data.bin"
+	var dest string = r.CacheDir + "/data"
 	if in, err = os.Create(source); err != nil {
 		panic(err)
 	}
@@ -259,11 +300,15 @@ func (r *A4kDotNet) flattenToMemory(dest string, files *[]File) {
 	}
 
 	for _, entry := range entries {
-		ext := filepath.Ext(entry.Name())
-		if ext == ".txt" || ext == ".torrent" || ext == ".jpg" || ext == ".png" {
+		name := entry.Name()
+		ext := filepath.Ext(name)
+		ext = strings.ToLower(ext)
+
+		if ext != ".ssa" && ext != ".ass" && ext != ".srt" {
 			continue
 		}
-		path := dest + "/" + entry.Name()
+
+		path := dest + "/" + name
 		if entry.IsDir() {
 			r.flattenToMemory(path, files)
 			continue
@@ -272,7 +317,6 @@ func (r *A4kDotNet) flattenToMemory(dest string, files *[]File) {
 			panic(err)
 		}
 
-		name := entry.Name()
 		switch strings.ToLower(ext) {
 		case ".ssa", ".ass":
 			in := bytes.NewReader(out)
@@ -289,9 +333,9 @@ func (r *A4kDotNet) flattenToMemory(dest string, files *[]File) {
 }
 
 func (r *A4kDotNet) cacheFiles(files *[]File) {
-	path := r.CachePath
+	path := r.CacheDir + "/data-cache"
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		os.Mkdir(path, os.ModePerm)
+		os.MkdirAll(path, os.ModePerm)
 	}
 
 	for _, file := range *files {
@@ -303,7 +347,7 @@ func (r *A4kDotNet) cacheFiles(files *[]File) {
 }
 
 func (r *A4kDotNet) GetFromCache(id string) (file *File, err error) {
-	path := r.CachePath
+	path := r.CacheDir + "/data-cache"
 	var entries []fs.DirEntry
 	var bytes []byte
 
