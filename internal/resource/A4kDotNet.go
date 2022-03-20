@@ -55,8 +55,7 @@ func (r *A4kDotNet) Search(keyword string) (subtitles []Subtitle, err error) {
 	doc := soup.HTMLParse(resp)
 	parent := doc.FindStrict("ul", "class", "ui relaxed divided list")
 	if parent.Error != nil {
-		log.Printf("query subtitle failed. msg: %s\n", parent.Error.Error())
-		return nil, nil
+		return nil, parent.Error
 	}
 
 	items := parent.FindAll("li")
