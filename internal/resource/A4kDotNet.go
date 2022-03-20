@@ -53,12 +53,13 @@ func (r *A4kDotNet) Search(keyword string) (subtitles []Subtitle, err error) {
 	}
 
 	doc := soup.HTMLParse(resp)
-	parentItems := doc.FindStrict("ul", "class", "ui relaxed divided list")
-    if parentItems.Pointer == nil || len(parentItems.Children()) == 0 {
-        return nil, nil
-    }
+	parent := doc.FindStrict("ul", "class", "ui relaxed divided list")
+	if parent.Error != nil {
+		log.Printf("query subtitle failed. msg: %s\n", parent.Error.Error())
+		return nil, nil
+	}
 
-    items := parentItems.FindAll("li")
+	items := parent.FindAll("li")
 
 	//var funcGetLanguages func(nodes []soup.Root) []string = func(nodes []soup.Root) []string {
 	//var result []string
