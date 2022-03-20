@@ -53,7 +53,12 @@ func (r *A4kDotNet) Search(keyword string) (subtitles []Subtitle, err error) {
 	}
 
 	doc := soup.HTMLParse(resp)
-	items := doc.FindStrict("ul", "class", "ui relaxed divided list").FindAll("li")
+	parent := doc.FindStrict("ul", "class", "ui relaxed divided list")
+	if parent.Error != nil {
+		return nil, parent.Error
+	}
+
+	items := parent.FindAll("li")
 
 	//var funcGetLanguages func(nodes []soup.Root) []string = func(nodes []soup.Root) []string {
 	//var result []string
