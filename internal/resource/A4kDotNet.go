@@ -53,6 +53,12 @@ func (r *A4kDotNet) Search(keyword string) (subtitles []Subtitle, err error) {
 	}
 
 	doc := soup.HTMLParse(resp)
+
+	el404 := doc.Find("div", "class", "search-404")
+	if el404.Error == nil {
+		return nil, nil
+	}
+
 	parent := doc.FindStrict("ul", "class", "ui relaxed divided list")
 	if parent.Error != nil {
 		return nil, parent.Error
