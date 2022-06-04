@@ -26,6 +26,7 @@ require (
 	github.com/qiniu/iconv v1.2.0
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca
 	github.com/spf13/cobra v1.2.1
+	github.com/victorspringer/http-cache v0.0.0-20220131145941-ef3624e6666f
 )
 
 require (
