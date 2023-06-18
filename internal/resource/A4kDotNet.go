@@ -47,7 +47,7 @@ func NewA4kDotNet() *A4kDotNet {
 
 func (r *A4kDotNet) Search(keyword string) (subtitles []Subtitle, err error) {
 	soup.Header("User-Agent", userAgent)
-	resp, err := soup.Get(fmt.Sprintf("%s/search?term=%s", site, keyword))
+	resp, err := soup.Get(fmt.Sprintf("%s/search?key=%s", site, keyword))
 	if err != nil {
 		return nil, err
 	}
@@ -59,12 +59,12 @@ func (r *A4kDotNet) Search(keyword string) (subtitles []Subtitle, err error) {
 		return nil, nil
 	}
 
-	parent := doc.FindStrict("ul", "class", "ui relaxed divided list")
+	parent := doc.FindStrict("tbody", "class", "table-group-divider")
 	if parent.Error != nil {
 		return nil, parent.Error
 	}
 
-	items := parent.FindAll("li")
+	items := parent.FindAll("tr")
 
 	//var funcGetLanguages func(nodes []soup.Root) []string = func(nodes []soup.Root) []string {
 	//var result []string
@@ -78,7 +78,7 @@ func (r *A4kDotNet) Search(keyword string) (subtitles []Subtitle, err error) {
 	size := int(math.Min(3, float64(len(items))))
 	// Only load top 3 items
 	for _, item := range items[:size] {
-		i := item.FindStrict("div", "class", "content").Find("h3").Find("a")
+		i := item.FindStrict("td", "class", "views-field views-field-title").Find("a")
 		id := i.Attrs()["href"][strings.LastIndex(i.Attrs()["href"], "/")+1:]
 		name := i.Text()
 
@@ -89,8 +89,9 @@ func (r *A4kDotNet) Search(keyword string) (subtitles []Subtitle, err error) {
 
 		doc := soup.HTMLParse(resp)
 
-		// /system/files/subtitle/2021-10/a4k.net_1634455869.rar
-		url := doc.FindStrict("div", "class", "download").FindStrict("a", "class", "ui green button").Attrs()["href"]
+		// DEPRECATED: /system/files/subtitle/2021-10/a4k.net_1634455869.rar
+		// CURRENT: /sites/default/files/subtitle/2023-05/a4k.net_2023-05-03_2138854432.rar
+		url := doc.Find("span", "class", "file").Find("a").Attrs()["href"]
 		url = fmt.Sprintf("%s/%s", site, url)
 
 		var items []Subtitle
